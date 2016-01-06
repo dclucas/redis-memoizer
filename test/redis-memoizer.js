@@ -1,6 +1,6 @@
 var memoize = require('../')(),
 	crypto = require('crypto'),
-	redis = require('redis').createClient(),
+	redis = require('ioredis').createClient(),
 	should = require('should');
 
 describe('redis-memoizer', function() {

@@ -1,4 +1,4 @@
-var redis = require('redis'),
+var redis = require('ioredis'),
 	crypto = require('crypto');
 
 module.exports = function() {
@@ -16,7 +16,7 @@ module.exports = function() {
 
 	function writeKeyToRedis(ns, key, value, ttl, done) {
 		if(ttl !== 0) {
-			client.setex('memos:' + ns + ':' + key, ttl, JSON.stringify(value), done);
+			client.setex('memos:' + ns + ':' + key, ttl, JSON.stringify(value));//, done);
 		} else {
 			process.nextTick(done || function() {});
 		}

@@ -10,10 +10,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "redis": "~0.8.2"
+    "ioredis": "^1.14.0"
   },
   "devDependencies": {
-    "mocha": "~1.8.1",
-    "should": "~1.2.1"
+    "mocha": "^2.3.4",
+    "should": "^8.0.2"
   }
 }
