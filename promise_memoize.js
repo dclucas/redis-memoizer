@@ -1,5 +1,5 @@
 var redis = require('ioredis'),
-	Promise = ('bluebird'),
+	Promise = require('bluebird'),
 	crypto = require('crypto');
 
 module.exports = function() {
@@ -23,7 +23,7 @@ module.exports = function() {
 		}
 	}
 
-	return function memoize(fn, ttl) {
+	function memoize(fn, ttl) {
 		var functionKey = hash(fn.toString()),
 			inFlight = {},
 			ttlfn;
@@ -34,7 +34,7 @@ module.exports = function() {
 			ttlfn = function() { return ttl || 120; }
 		}
 
-		return function memoizedFunction() {
+		function memoizedFunction() {
 			var self = this,	// if 'this' is used in the function
 				args = Array.prototype.slice.call(arguments),
 				done = args.pop(),
@@ -66,4 +66,10 @@ module.exports = function() {
 			});
 		}
 	}
-}
+	
+	return function memoize2(fn, ttl) {
+		return function(x) {
+			return Promise.resolve(x);	
+		};
+	};
+};

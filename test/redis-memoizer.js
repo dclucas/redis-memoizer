@@ -1,4 +1,5 @@
 var memoize = require('../')(),
+    memoize2 = require('../promise_memoize.js')(),
 	crypto = require('crypto'),
 	redis = require('ioredis').createClient(),
 	should = require('should');
@@ -13,6 +14,16 @@ describe('redis-memoizer', function() {
 		redis.del('memos:' + hash(fn.toString()) + ':' + hash(stringified), done);
 	}
 
+	it('should create a promisified function', function() {
+		var f = function(x) { return x; },
+			m = memoize2(f);
+			
+		return m(13).then(function(val) {
+			val.should.equal(13);
+			return true;
+		});
+	});
+	/*
 	it('should memoize a value correctly', function(done) {
 		var functionToMemoize = function (val1, val2, done) {
 				setTimeout(function() { done(val1, val2); }, 500);
@@ -171,4 +182,5 @@ describe('redis-memoizer', function() {
 			});
 		});
 	});
+	*/
 });
