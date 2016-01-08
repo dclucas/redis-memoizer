@@ -25,11 +25,12 @@ describe('redis-memoizer', function() {
 			},
 			m = memoize(f);
 		
-		return m(17).then(function(val) {
-			val.should.equal(17);
-			passed.should.be.true();
-			return true;
-		});
+		return m(17)
+			.then(function(val) {
+				val.should.equal(17);
+				passed.should.be.true();
+				return true;
+			});
 	});
 	
 	it('should memoize a value correctly', function() {
@@ -41,67 +42,56 @@ describe('redis-memoizer', function() {
 			},
 			m = memoize(f);
 		
-		return m(13).then(function(val) {
-			val.should.equal(13);
-			passCount.should.equal(1);
-
-			return m(13).then(function(val2) {
-				val2.should.equal(13);
+		return m(13)
+			// first go -- no chache hit
+			.then(function(val) {
+				val.should.equal(13);
 				passCount.should.equal(1);
+				return m(13);
+			})
+			// this should have been memoized -- so pass count must not increase
+			.then(function(val) {
+				val.should.equal(13);
+				passCount.should.equal(1);
+				return m(97);
+			})
+			// new value was provided, so pass count should increase
+			.then(function(val) {
+				val.should.equal(97);
+				passCount.should.equal(2);
+				return m(97);
+			})
+			// testing cache hit for the new value
+			.then(function(val) {
+				val.should.equal(97);
+				passCount.should.equal(2);
 				return true;
 			});
-		});
 	});
 	
 	it("should memoize separate function separately", function() {
-		/*
-		var f1 = function(arg) { return arg; },
-			f2 = function(arg) { return arg + 1 };
+		var f1 = function(arg) { return 1; },
+			f2 = function(arg) { return 2 };
 
 		var m1 = memoize(f1),
 			m2 = memoize(f2);
 
-		memoizedFn1("x", function(val) {
-			val.should.equal(1);
-
-			memoizedFn2("y", function(val) {
+		return m1("x").
+			then(function(val) {
+				val.should.equal(1);
+				return m2("x");
+			})
+			.then(function(val) {
 				val.should.equal(2);
-
-				memoizedFn1("x", function(val) {
-					val.should.equal(1);
-
-					clearCache(function1, ["x"]);
-					clearCache(function2, ["y"], done);
-				});
+				return m1("x");
+			})
+			.then(function(val) {
+				val.should.equal(1);
+				return true;
 			});
-		});
-		*/
 	});
-	
+
 /*
-	it("should memoize separate function separately", function(done) {
-		var function1 = function(arg, done) { setTimeout(function() { done(1); }, 200); },
-			function2 = function(arg, done) { setTimeout(function() { done(2); }, 200); };
-
-		var memoizedFn1 = memoize(function1),
-			memoizedFn2 = memoize(function2);
-
-		memoizedFn1("x", function(val) {
-			val.should.equal(1);
-
-			memoizedFn2("y", function(val) {
-				val.should.equal(2);
-
-				memoizedFn1("x", function(val) {
-					val.should.equal(1);
-
-					clearCache(function1, ["x"]);
-					clearCache(function2, ["y"], done);
-				});
-			});
-		});
-	});
-
 	it("should prevent a cache stampede", function(done) {
 		var fn = function(done) { setTimeout(done, 500); },
 			memoized = memoize(fn);
