@@ -1,3 +1,5 @@
+'use strict'
+
 var memoize = require('../')(),
     memoize2 = require('../promise_memoize.js')(),
 	crypto = require('crypto'),
@@ -9,10 +11,11 @@ describe('redis-memoizer', function() {
 		return crypto.createHmac('sha1', 'memo').update(string).digest('hex');
 	}
 
-	function clearCache(fn, args, done) {
-		var stringified = args.map(function(arg) { return JSON.stringify(arg); }).join(",");
-		redis.del('memos:' + hash(fn.toString()) + ':' + hash(stringified), done);
-	}
+	beforeEach(function() {
+		return redis.keys('memos:*').each(function(k) {
+			return redis.del(k);
+		});
+  	})
 
 	it('should create a promisified function', function() {
 		var 
@@ -45,7 +48,7 @@ describe('redis-memoizer', function() {
 
 			return m(13).then(function(val2) {
 				val2.should.equal(13);
-				//passCount.should.equal(1);
+				passCount.should.equal(1);
 				return true;
 			});
 		});

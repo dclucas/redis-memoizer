@@ -16,12 +16,15 @@ module.exports = function() {
 		});
 	}
 
-	function writeKeyToRedis(ns, key, value, ttl, done) {
+	function writeKeyToRedis(ns, key, value, ttl) {
+		return client.setex('memos:' + ns + ':' + key, ttl, JSON.stringify(value));
+		/*
 		if(ttl !== 0) {
 			client.setex('memos:' + ns + ':' + key, ttl, JSON.stringify(value));//, done);
 		} else {
 			process.nextTick(done || function() {});
 		}
+		*/
 	}
 
 	function memoize(fn, ttl) {
@@ -87,8 +90,13 @@ module.exports = function() {
 			argsStringified = hash(argsStringified);
 			return getKeyFromRedis(functionKey, argsStringified)
 				.then(function(value) {
-					var res = fn.apply(self, args);
-					return res;
+					if (value) {
+						return value;
+					} else {
+						var res = fn.apply(self, args);
+						writeKeyToRedis(functionKey, argsStringified, res, ttlfn());
+						return res;
+					}
 				});
 		    
 			/*
