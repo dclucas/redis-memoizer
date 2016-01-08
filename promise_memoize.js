@@ -10,8 +10,9 @@ module.exports = function() {
 	}
 
 	function getKeyFromRedis(ns, key, done) {
-		client.get('memos:' + ns + ':' + key, function(err, value) {
-			done(err, JSON.parse(value));
+		return client.get('memos:' + ns + ':' + key)
+		.then(function(value) {
+			return JSON.parse(value);
 		});
 	}
 
@@ -68,8 +69,43 @@ module.exports = function() {
 	}
 	
 	return function memoize2(fn, ttl) {
-		return function(x) {
-			return Promise.resolve(x);	
+		var functionKey = hash(fn.toString()),
+			inFlight = {},
+			ttlfn;
+
+		if(typeof ttl == 'function') {
+			ttlfn = ttl;
+		} else {
+			ttlfn = function() { return ttl || 120; }
+		}
+	    
+		return function() {
+			var self = this,	// if 'this' is used in the function
+				args = Array.prototype.slice.call(arguments),
+				argsStringified = args.map(function(arg) { return JSON.stringify(arg); }).join(",");
+
+			argsStringified = hash(argsStringified);
+			return getKeyFromRedis(functionKey, argsStringified)
+				.then(function(value) {
+					var res = fn.apply(self, args);
+					return res;
+				});
+		    
+			/*
+					fn.apply(self, args.concat(function() {
+						var resultArgs = Array.prototype.slice.call(arguments);
+
+						writeKeyToRedis(functionKey, argsStringified, resultArgs, ttlfn.apply(null, resultArgs));
+
+						if(inFlight[argsStringified]) {
+							inFlight[argsStringified].forEach(function(cb) {
+								cb.apply(self, resultArgs);
+							});
+							delete inFlight[argsStringified];
+						}
+					}));
+
+			*/
 		};
 	};
 };

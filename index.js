@@ -1,5 +1,4 @@
 var redis = require('ioredis'),
-	Promise = ('bluebird'),
 	crypto = require('crypto');
 
 module.exports = function() {
