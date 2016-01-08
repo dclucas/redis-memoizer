@@ -1,7 +1,6 @@
 'use strict'
 
-var memoize = require('../')(),
-    memoize2 = require('../promise_memoize.js')(),
+var memoize = require('../promise_memoize.js')(),
 	crypto = require('crypto'),
 	redis = require('ioredis').createClient(),
 	should = require('should');
@@ -24,7 +23,7 @@ describe('redis-memoizer', function() {
 				passed = true;
 				return x;
 			},
-			m = memoize2(f);
+			m = memoize(f);
 		
 		return m(17).then(function(val) {
 			val.should.equal(17);
@@ -40,7 +39,7 @@ describe('redis-memoizer', function() {
 				passCount++;
 				return x;
 			},
-			m = memoize2(f);
+			m = memoize(f);
 		
 		return m(13).then(function(val) {
 			val.should.equal(13);
@@ -53,6 +52,32 @@ describe('redis-memoizer', function() {
 			});
 		});
 	});
+	
+	it("should memoize separate function separately", function() {
+		/*
+		var f1 = function(arg) { return arg; },
+			f2 = function(arg) { return arg + 1 };
+
+		var m1 = memoize(f1),
+			m2 = memoize(f2);
+
+		memoizedFn1("x", function(val) {
+			val.should.equal(1);
+
+			memoizedFn2("y", function(val) {
+				val.should.equal(2);
+
+				memoizedFn1("x", function(val) {
+					val.should.equal(1);
+
+					clearCache(function1, ["x"]);
+					clearCache(function2, ["y"], done);
+				});
+			});
+		});
+		*/
+	});
+	
 /*
 	it("should memoize separate function separately", function(done) {
 		var function1 = function(arg, done) { setTimeout(function() { done(1); }, 200); },
