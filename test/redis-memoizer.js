@@ -1,6 +1,6 @@
 'use strict'
 
-var memoize = require('../promise_memoize.js')(),
+var memoize = require('../')(),
 	crypto = require('crypto'),
 	redis = require('ioredis').createClient(),
 	should = require('should');

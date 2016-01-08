@@ -1,4 +1,5 @@
 var redis = require('ioredis'),
+	Promise = require('bluebird'),
 	crypto = require('crypto');
 
 module.exports = function() {
@@ -9,20 +10,18 @@ module.exports = function() {
 	}
 
 	function getKeyFromRedis(ns, key, done) {
-		client.get('memos:' + ns + ':' + key, function(err, value) {
-			done(err, JSON.parse(value));
+		return client.get('memos:' + ns + ':' + key)
+		.then(function(value) {
+			return JSON.parse(value);
 		});
 	}
 
-	function writeKeyToRedis(ns, key, value, ttl, done) {
-		if(ttl !== 0) {
-			client.setex('memos:' + ns + ':' + key, ttl, JSON.stringify(value));//, done);
-		} else {
-			process.nextTick(done || function() {});
-		}
+	function writeKeyToRedis(ns, key, value, ttl) {
+		return client.setex('memos:' + ns + ':' + key, ttl, JSON.stringify(value));
 	}
 
-	return function memoize(fn, ttl) {
+	/*
+	function memoize(fn, ttl) {
 		var functionKey = hash(fn.toString()),
 			inFlight = {},
 			ttlfn;
@@ -33,7 +32,7 @@ module.exports = function() {
 			ttlfn = function() { return ttl || 120; }
 		}
 
-		return function memoizedFunction() {
+		function memoizedFunction() {
 			var self = this,	// if 'this' is used in the function
 				args = Array.prototype.slice.call(arguments),
 				done = args.pop(),
@@ -65,4 +64,35 @@ module.exports = function() {
 			});
 		}
 	}
-}
+	*/
+	
+	return function memoize(fn, ttl) {
+		var functionKey = hash(fn.toString()),
+			inFlight = {},
+			ttlfn;
+
+		if(typeof ttl == 'function') {
+			ttlfn = ttl;
+		} else {
+			ttlfn = function() { return ttl || 120; }
+		}
+	    
+		return function() {
+			var self = this,	// if 'this' is used in the function
+				args = Array.prototype.slice.call(arguments),
+				argsStringified = args.map(function(arg) { return JSON.stringify(arg); }).join(",");
+
+			argsStringified = hash(argsStringified);
+			return getKeyFromRedis(functionKey, argsStringified)
+				.then(function(value) {
+					if (value) {
+						return value;
+					} else {
+						var res = fn.apply(self, args);
+						writeKeyToRedis(functionKey, argsStringified, res, ttlfn());
+						return res;
+					}
+				});
+		};
+	};
+};

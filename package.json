@@ -1,12 +1,12 @@
 {
-  "name": "redis-memoizer",
-  "version": "0.0.3",
-  "description": "A memoizer using redis as a shared cache, with TTL.",
+  "name": "redis-promise-memoizer",
+  "version": "0.0.1",
+  "description": "A promise-based memoizer using redis as a shared cache, with TTL.",
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --reporter spec --timeout 5000"
   },
-  "repository": "",
+  "repository": "git@github.com:dclucas/redis-memoizer.git",
   "author": "",
   "license": "MIT",
   "dependencies": {
