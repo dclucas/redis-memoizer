@@ -91,6 +91,25 @@ describe('redis-memoizer', function() {
 			});
 	});
 
+	it("should prevent a cache stampede", function() {
+		var 
+			passCount = 0,
+			f = function(x) { passCount++; return x; },
+			m = memoize(f);
+
+		var start = new Date;
+
+		var p1 = m(1).then (function() {
+			passCount.should.equal(1);
+		});
+		
+		var p2 = m(1).then (function() {
+			passCount.should.equal(1);
+		});
+		
+		return p1.then(p2);
+	});
+
 /*
 	it("should prevent a cache stampede", function(done) {
 		var fn = function(done) { setTimeout(done, 500); },
