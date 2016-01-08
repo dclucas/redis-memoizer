@@ -36,20 +36,25 @@ module.exports = function() {
 
 			argsStringified = hash(argsStringified);
 			return getKeyFromRedis(functionKey, argsStringified)
-				.then(function(value) {
-					if (value) {
-						return value;
-					} else if (inFlight[argsStringified]) {
-						return inFlight[argsStringified];
-					} else {
-						return inFlight[argsStringified] = Promise
-							.resolve(fn.apply(self, args))
-							.then(function(res) {
-								writeKeyToRedis(functionKey, argsStringified, res, ttlfn());
-								return res;
-							});
-					}
-				});
+			.then(function(value) {
+				if (value) {
+					return value;
+				} else if (inFlight[argsStringified]) {
+					return inFlight[argsStringified];
+				} else {
+					return inFlight[argsStringified] = Promise.resolve(
+						fn.apply(self, args)
+					).then(function(res) {
+						// this write operation is not in the main promise chain, as
+						// synchronization across the two is not required.
+						writeKeyToRedis(functionKey, argsStringified, res, ttlfn())
+						.then(function() {
+							delete inFlight[argsStringified];
+						});
+						return res;
+					});
+				}
+			});
 		};
 	};
 };

@@ -25,12 +25,11 @@ describe('redis-memoizer', function() {
 			},
 			m = memoize(f);
 		
-		return m(17)
-			.then(function(val) {
-				val.should.equal(17);
-				passed.should.be.true();
-				return true;
-			});
+		return m(17).then(function(val) {
+			val.should.equal(17);
+			passed.should.be.true();
+			return true;
+		});
 	});
 	
 	it('should memoize a value correctly', function() {
@@ -42,31 +41,27 @@ describe('redis-memoizer', function() {
 			},
 			m = memoize(f);
 		
-		return m(13)
-			// first go -- no chache hit
-			.then(function(val) {
-				val.should.equal(13);
-				passCount.should.equal(1);
-				return m(13);
-			})
-			// this should have been memoized -- so pass count must not increase
-			.then(function(val) {
-				val.should.equal(13);
-				passCount.should.equal(1);
-				return m(97);
-			})
-			// new value was provided, so pass count should increase
-			.then(function(val) {
-				val.should.equal(97);
-				passCount.should.equal(2);
-				return m(97);
-			})
-			// testing cache hit for the new value
-			.then(function(val) {
-				val.should.equal(97);
-				passCount.should.equal(2);
-				return true;
-			});
+		// first go -- no chache hit
+		return m(13).then(function(val) {
+			val.should.equal(13);
+			passCount.should.equal(1);
+			return m(13);
+		// this should have been memoized -- so pass count must not increase
+		}).then(function(val) {
+			val.should.equal(13);
+			passCount.should.equal(1);
+			return m(97);
+		// new value was provided, so pass count should increase
+		}).then(function(val) {
+			val.should.equal(97);
+			passCount.should.equal(2);
+			return m(97);
+		// testing cache hit for the new value
+		}).then(function(val) {
+			val.should.equal(97);
+			passCount.should.equal(2);
+			return true;
+		});
 	});
 	
 	it("should memoize separate function separately", function() {
@@ -76,60 +71,47 @@ describe('redis-memoizer', function() {
 		var m1 = memoize(f1),
 			m2 = memoize(f2);
 
-		return m1("x").
-			then(function(val) {
-				val.should.equal(1);
-				return m2("x");
-			})
-			.then(function(val) {
-				val.should.equal(2);
-				return m1("x");
-			})
-			.then(function(val) {
-				val.should.equal(1);
-				return true;
-			});
+		return m1("x").then(function(val) {
+			val.should.equal(1);
+			return m2("x");
+		}).then(function(val) {
+			val.should.equal(2);
+			return m1("x");
+		}).then(function(val) {
+			val.should.equal(1);
+			return true;
+		});
 	});
 
 	it("should prevent a cache stampede", function() {
 		var 
 			passCount = 0,
 			f = function(x) { passCount++; return x; },
-			m = memoize(f);
+			m = memoize(f, 100);
 
 		var start = new Date;
 
-		var p1 = m(1).then (function() {
+		var p1 = m(1).then(function(val) {
+			val.should.equal(1);
 			passCount.should.equal(1);
+			return true;
 		});
 		
-		var p2 = m(1).then (function() {
+		var p2 = m(1).then(function(val) {
+			val.should.equal(1);
 			passCount.should.equal(1);
+			return m(1);
+		})
+		.then(function(val) {
+			val.should.equal(1);
+			passCount.should.equal(1);
+			return true;
 		});
 		
 		return p1.then(p2);
 	});
 
 /*
-	it("should prevent a cache stampede", function(done) {
-		var fn = function(done) { setTimeout(done, 500); },
-			memoized = memoize(fn);
-
-		var start = new Date;
-
-		memoized(function() {
-			// First one. Should take 500ms
-			(new Date - start >= 500).should.be.true;
-
-			start = new Date;	// Set current time for next callback;
-		});
-
-		memoized(function() {
-			(new Date - start <= 10).should.be.true;
-			clearCache(fn, [], done);
-		});
-	});
-
 	it('should respect \'this\'', function(done) {
 		function Obj() { this.x = 1; }
 		Obj.prototype.y = memoize(function(done) {
